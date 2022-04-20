@@ -28,11 +28,9 @@ Java_com_example_myapplication_MainActivity_stringFromJNI(
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_example_myapplication_MainActivity_initRing(JNIEnv *env,
-                                                          jclass ) {
+Java_com_example_myapplication_MainActivity_initRing(JNIEnv *env, jclass) {
     mbedtls_entropy_init( &entropy );
     mbedtls_ctr_drbg_init( &ctr_drbg );
-
     return mbedtls_ctr_drbg_seed( &ctr_drbg , mbedtls_entropy_func, &entropy,
                                   (const unsigned char *) personalization,
                                   strlen( personalization ) );
@@ -40,6 +38,8 @@ Java_com_example_myapplication_MainActivity_initRing(JNIEnv *env,
 
 extern "C" JNIEXPORT jbyteArray JNICALL
 Java_com_example_myapplication_MainActivity_randomBytes(JNIEnv *env, jclass, jint no) {
+    LOG_INFO("Call random bites");
+    logger->info("Call random bites from spdlog");
     uint8_t * buf = new uint8_t [no];
     mbedtls_ctr_drbg_random(&ctr_drbg, buf, no);
     jbyteArray rnd = env->NewByteArray(no);
@@ -95,16 +95,16 @@ Java_com_example_myapplication_MainActivity_decrypt(JNIEnv *env,
     mbedtls_des3_context ctx;
     mbedtls_des3_init(&ctx);
 
-    jbyte * pkey = env->GetByteArrayElements(key, 0);
+    jbyte *pkey = env->GetByteArrayElements(key, 0);
 
-    uint8_t * buf = new uint8_t[dsz];
+    uint8_t *buf = new uint8_t[dsz];
 
     jbyte * pdata = env->GetByteArrayElements(data, 0);
     std::copy(pdata, pdata + dsz, buf);
     mbedtls_des3_set2key_dec(&ctx, (uint8_t *)pkey);
     int cn = dsz / 8;
     for (int i = 0; i < cn; i++)
-        mbedtls_des3_crypt_ecb(&ctx, buf + i*8, buf +i*8);
+        mbedtls_des3_crypt_ecb(&ctx, buf + i*8, buf + i*8);
 
     //PKCS#5. упрощено. по соображениям безопасности надо проверить каждый байт паддинга
     int sz = dsz - 8 + buf[dsz-1];
